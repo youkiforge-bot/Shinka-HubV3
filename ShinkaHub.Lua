@@ -1,10 +1,8 @@
 --[[
-    ShinkaHub v3.0 - PARTE 1/4
-    Estrutura principal + Abas Home e Local
-    Execute esta parte primeiro.
+    ShinkaHub v3.0 - PARTE 1/4 (CORRIGIDA)
+    Execute primeiro.
 --]]
 
--- Tabela global para compartilhamento entre as partes
 _G.ShinkaHub = _G.ShinkaHub or {
     functionsActive = {},
     connections = {},
@@ -22,9 +20,6 @@ _G.ShinkaHub = _G.ShinkaHub or {
         ignoreList = {},
     },
     tabs = {},
-    gui = nil,
-    mainFrame = nil,
-    minimizedFrame = nil,
 }
 
 local SH = _G.ShinkaHub
@@ -206,21 +201,23 @@ footer.BorderSizePixel = 0
 Instance.new("UICorner", footer).CornerRadius = UDim.new(0, 6)
 footer.Parent = mainFrame
 
--- Sistema de abas
-local tabButtonsFrame = Instance.new("Frame")
-tabButtonsFrame.Size = UDim2.new(1, -20, 0, 40)
-tabButtonsFrame.Position = UDim2.new(0, 10, 0, 45)
-tabButtonsFrame.BackgroundTransparency = 1
-tabButtonsFrame.Parent = mainFrame
+-- Sistema de abas (função global)
+_G.createTab = function(name)
+    if not SH.tabButtonsFrame then
+        SH.tabButtonsFrame = Instance.new("Frame")
+        SH.tabButtonsFrame.Size = UDim2.new(1, -20, 0, 40)
+        SH.tabButtonsFrame.Position = UDim2.new(0, 10, 0, 45)
+        SH.tabButtonsFrame.BackgroundTransparency = 1
+        SH.tabButtonsFrame.Parent = mainFrame
 
-local tabContainer = Instance.new("Frame")
-tabContainer.Size = UDim2.new(1, -20, 1, -120)
-tabContainer.Position = UDim2.new(0, 10, 0, 90)
-tabContainer.BackgroundTransparency = 1
-tabContainer.Parent = mainFrame
-tabContainer.ClipsDescendants = true
+        SH.tabContainer = Instance.new("Frame")
+        SH.tabContainer.Size = UDim2.new(1, -20, 1, -120)
+        SH.tabContainer.Position = UDim2.new(0, 10, 0, 90)
+        SH.tabContainer.BackgroundTransparency = 1
+        SH.tabContainer.Parent = mainFrame
+        SH.tabContainer.ClipsDescendants = true
+    end
 
-local function createTab(name)
     local tabButton = Instance.new("TextButton")
     tabButton.Size = UDim2.new(0, 50, 1, 0)
     tabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
@@ -232,7 +229,7 @@ local function createTab(name)
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0, 6)
     btnCorner.Parent = tabButton
-    tabButton.Parent = tabButtonsFrame
+    tabButton.Parent = SH.tabButtonsFrame
 
     local function resize()
         local textSize = tabButton.TextBounds.X + 20
@@ -249,7 +246,7 @@ local function createTab(name)
     tabContent.ScrollBarImageColor3 = Color3.fromRGB(255, 215, 0)
     tabContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
     tabContent.Visible = false
-    tabContent.Parent = tabContainer
+    tabContent.Parent = SH.tabContainer
     local layout = Instance.new("UIListLayout")
     layout.Padding = UDim.new(0, 8)
     layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -272,18 +269,8 @@ local function createTab(name)
     end)
 end
 
--- Criar abas da parte 1
-createTab("Home")
-createTab("Local")
--- As outras serão criadas nas partes seguintes
-
--- Ativar primeira aba
-SH.currentTab = "Home"
-SH.tabs["Home"].content.Visible = true
-SH.tabs["Home"].button.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
-
--- Funções auxiliares
-local function notify(text, color)
+-- Funções auxiliares globais
+_G.notify = function(text, color)
     color = color or Color3.fromRGB(0,200,0)
     local notify = Instance.new("TextLabel")
     notify.Size = UDim2.new(0, 200, 0, 50)
@@ -301,7 +288,7 @@ local function notify(text, color)
     notify:Destroy()
 end
 
-local function createButton(tab, text, color, callback)
+_G.createButton = function(tab, text, color, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 50)
     btn.BackgroundColor3 = color
@@ -317,7 +304,7 @@ local function createButton(tab, text, color, callback)
     return btn
 end
 
-local function createInputBox(tab, placeholder, buttonText, color, callback)
+_G.createInputBox = function(tab, placeholder, buttonText, color, callback)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -10, 0, 90)
     frame.BackgroundTransparency = 1
@@ -357,8 +344,8 @@ local function createInputBox(tab, placeholder, buttonText, color, callback)
     return frame, box, btn
 end
 
-local function createToggleButton(tab, text, color, varName, onToggle)
-    local btn = createButton(tab, text, color, function()
+_G.createToggleButton = function(tab, text, color, varName, onToggle)
+    local btn = _G.createButton(tab, text, color, function()
         SH.functionsActive[varName] = not SH.functionsActive[varName]
         if SH.functionsActive[varName] then
             btn.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
@@ -370,6 +357,15 @@ local function createToggleButton(tab, text, color, varName, onToggle)
     end)
     return btn
 end
+
+-- Criar abas iniciais
+createTab("Home")
+createTab("Local")
+
+-- Ativar primeira aba
+SH.currentTab = "Home"
+SH.tabs["Home"].content.Visible = true
+SH.tabs["Home"].button.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 
 -- ============================================
 -- ABA HOME
@@ -391,8 +387,6 @@ createButton("Home", "Desativar Tudo", Color3.fromRGB(255, 50, 50), function()
                     if player.Character then
                         local highlight = player.Character:FindFirstChildOfClass("Highlight")
                         if highlight and highlight.Name == "ShinkaESP" then highlight:Destroy() end
-                        local billboard = player.Character:FindFirstChildOfClass("BillboardGui")
-                        if billboard and billboard.Name == "DistanceGUI" then billboard:Destroy() end
                     end
                 end
                 if SH.connections.playerAdded then SH.connections.playerAdded:Disconnect() end
@@ -473,8 +467,7 @@ createToggleButton("Local", "Anti AFK", Color3.fromRGB(100, 100, 200), "antiAFK"
 end)
 
 print("Parte 1/4 carregada. Execute a parte 2 agora.")--[[
-    ShinkaHub v3.0 - PARTE 2/4
-    Aba Teleports + parte da aba Visual
+    ShinkaHub v3.0 - PARTE 2/4 (CORRIGIDA)
     Execute após a parte 1.
 --]]
 
@@ -484,21 +477,16 @@ if not SH or not SH.gui then
     return
 end
 
+-- Criar abas se não existirem
+if not SH.tabs["Teleports"] then createTab("Teleports") end
+if not SH.tabs["Visual"] then createTab("Visual") end
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
-
--- Criar abas que faltam (se não existirem)
-if not SH.tabs["Teleports"] then
-    createTab("Teleports")  -- função createTab já definida na parte 1
-end
-if not SH.tabs["Visual"] then
-    createTab("Visual")
-end
 
 -- ============================================
 -- ABA TELEPORTS
@@ -635,7 +623,6 @@ end)
 -- ============================================
 -- ABA VISUAL (parte 1)
 -- ============================================
--- ESP (toggle) com opções
 createToggleButton("Visual", "ESP", Color3.fromRGB(255, 255, 0), "esp", function(active)
     if active then
         local function addESP(player)
@@ -707,8 +694,7 @@ createToggleButton("Visual", "ESP", Color3.fromRGB(255, 255, 0), "esp", function
 end)
 
 print("Parte 2/4 carregada. Execute a parte 3 agora.")--[[
-    ShinkaHub v3.0 - PARTE 3/4
-    Continuação da aba Visual + aba World
+    ShinkaHub v3.0 - PARTE 3/4 (CORRIGIDA)
     Execute após a parte 2.
 --]]
 
@@ -718,23 +704,17 @@ if not SH or not SH.gui then
     return
 end
 
+-- Criar aba World se não existir
+if not SH.tabs["World"] then createTab("World") end
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
-
--- Criar aba World se não existir
-if not SH.tabs["World"] then
-    createTab("World")
-end
 
 -- ============================================
 -- ABA VISUAL (continuação)
 -- ============================================
--- Botão para configurar ESP (cor, transparência, distância)
 createButton("Visual", "Configurar ESP", Color3.fromRGB(150, 150, 150), function()
     local configFrame = Instance.new("Frame")
     configFrame.Size = UDim2.new(0, 250, 0, 200)
@@ -815,16 +795,13 @@ createButton("Visual", "Configurar ESP", Color3.fromRGB(150, 150, 150), function
     Instance.new("UICorner", applyBtn).CornerRadius = UDim.new(0,6)
     applyBtn.Parent = configFrame
     applyBtn.MouseButton1Click:Connect(function()
-        -- Ler cor
         local r,g,b = colorBox.Text:match("(%d+),%s*(%d+),%s*(%d+)")
         if r and g and b then
             SH.espSettings.color = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
         end
         local t = tonumber(transBox.Text)
         if t then SH.espSettings.transparency = math.clamp(t,0,1) end
-        -- Se ESP estiver ativo, recriar
         if SH.functionsActive.esp then
-            -- Desativar primeiro
             for _, player in pairs(Players:GetPlayers()) do
                 if player.Character then
                     local highlight = player.Character:FindFirstChildOfClass("Highlight")
@@ -833,7 +810,6 @@ createButton("Visual", "Configurar ESP", Color3.fromRGB(150, 150, 150), function
                     if billboard and billboard.Name == "DistanceGUI" then billboard:Destroy() end
                 end
             end
-            -- Reativar
             local function addESP(player)
                 if player == LocalPlayer then return end
                 local function apply(character)
@@ -885,7 +861,6 @@ createButton("Visual", "Configurar ESP", Color3.fromRGB(150, 150, 150), function
     end)
 end)
 
--- Remover neblina
 createButton("Visual", "Remover Neblina", Color3.fromRGB(0, 150, 255), function()
     local lighting = game:GetService("Lighting")
     lighting.FogEnd = 1e9
@@ -894,7 +869,6 @@ createButton("Visual", "Remover Neblina", Color3.fromRGB(0, 150, 255), function(
     notify("Neblina removida", Color3.fromRGB(0,200,0))
 end)
 
--- Zoom infinito
 createButton("Visual", "Zoom Infinito", Color3.fromRGB(255, 200, 100), function()
     LocalPlayer.CameraMaxZoomDistance = 999999
     LocalPlayer.CameraMinZoomDistance = 0
@@ -904,12 +878,10 @@ end)
 -- ============================================
 -- ABA WORLD
 -- ============================================
--- Fly (carrega externo)
 createButton("World", "Fly (Ativar)", Color3.fromRGB(255, 120, 0), function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
 end)
 
--- Btools
 createButton("World", "Btools (Construir)", Color3.fromRGB(100, 200, 255), function()
     local hammer = Instance.new("HopperBin")
     hammer.BinType = Enum.BinType.Hammer
@@ -923,7 +895,6 @@ createButton("World", "Btools (Construir)", Color3.fromRGB(100, 200, 255), funct
     notify("Ferramentas adicionadas", Color3.fromRGB(0,200,0))
 end)
 
--- Auto Farm (genérico - clica em botões)
 createToggleButton("World", "Auto Farm (Botões)", Color3.fromRGB(255, 100, 100), "autoFarm", function(active)
     if active then
         SH.connections.autoFarm = RunService.Heartbeat:Connect(function()
@@ -943,13 +914,11 @@ createToggleButton("World", "Auto Farm (Botões)", Color3.fromRGB(255, 100, 100)
     end
 end)
 
--- Configurar Auto Farm (delay)
 createInputBox("World", "Delay (segundos)", "Set Delay", Color3.fromRGB(150,150,150), function(value)
     local d = tonumber(value)
     if d then SH.autoFarmSettings.delay = d end
 end)
 
--- Coletar itens automaticamente
 createToggleButton("World", "Coletar Itens", Color3.fromRGB(0, 255, 100), "collectItems", function(active)
     if active then
         SH.connections.collectItems = RunService.Heartbeat:Connect(function()
@@ -976,15 +945,13 @@ createToggleButton("World", "Coletar Itens", Color3.fromRGB(0, 255, 100), "colle
     end
 end)
 
--- Configurar alcance da coleta
 createInputBox("World", "Alcance (ex: 50)", "Set Alcance", Color3.fromRGB(150,150,150), function(value)
     local r = tonumber(value)
     if r then SH.collectItemsSettings.range = r end
 end)
 
 print("Parte 3/4 carregada. Execute a parte 4 agora.")--[[
-    ShinkaHub v3.0 - PARTE 4/4
-    Aba Scripts + Finalização
+    ShinkaHub v3.0 - PARTE 4/4 (CORRIGIDA)
     Execute por último.
 --]]
 
@@ -994,23 +961,15 @@ if not SH or not SH.gui then
     return
 end
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
-
 -- Criar aba Scripts se não existir
-if not SH.tabs["Scripts"] then
-    createTab("Scripts")
-end
+if not SH.tabs["Scripts"] then createTab("Scripts") end
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
 -- ============================================
 -- ABA SCRIPTS
 -- ============================================
--- Executar script externo (loadstring)
 createInputBox("Scripts", "URL do script", "Executar", Color3.fromRGB(255, 100, 0), function(url)
     if url and url ~= "" then
         local success, result = pcall(function()
@@ -1021,14 +980,12 @@ createInputBox("Scripts", "URL do script", "Executar", Color3.fromRGB(255, 100, 
     end
 end)
 
--- Salvar script favorito (copia template para clipboard)
 createInputBox("Scripts", "Nome do script", "Copiar Template", Color3.fromRGB(100,100,255), function(name)
     local template = '{"'..name..'":"https://exemplo.com/script.lua"}'
     setclipboard(template)
     notify("Template copiado! Edite e cole novamente para importar.", Color3.fromRGB(0,200,0))
 end)
 
--- Importar scripts salvos (ler clipboard)
 createButton("Scripts", "Importar Scripts", Color3.fromRGB(0,200,100), function()
     local success, data = pcall(function() return game:GetService("HttpService"):JSONDecode(readclipboard()) end)
     if success and type(data) == "table" then
@@ -1085,9 +1042,7 @@ createButton("Scripts", "Importar Scripts", Color3.fromRGB(0,200,100), function(
     end
 end)
 
--- Botão para limpar memória (opcional)
 createButton("Scripts", "Limpar Memória", Color3.fromRGB(200, 0, 0), function()
-    -- Tenta limpar conexões órfãs (já fazemos no desativar tudo)
     collectgarbage()
     notify("Memória limpa", Color3.fromRGB(0,200,0))
 end)
