@@ -1,8 +1,10 @@
 --[[
-    ShinkaHub v3.0 - PARTE 1/4 (CORRIGIDA)
+    ShinkaHub v2.5 - PARTE 1/4
+    Estrutura principal + abas Home e Local
     Execute primeiro.
 --]]
 
+-- Tabela global para compartilhamento entre as partes
 _G.ShinkaHub = _G.ShinkaHub or {
     functionsActive = {},
     connections = {},
@@ -15,9 +17,13 @@ _G.ShinkaHub = _G.ShinkaHub or {
     autoFarmSettings = {
         delay = 0.5,
     },
-    collectItemsSettings = {
+    collectSettings = {
         range = 50,
         ignoreList = {},
+    },
+    aimbotSettings = {
+        teamCheck = false,
+        hitPart = "Head",
     },
     tabs = {},
 }
@@ -30,6 +36,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
@@ -75,7 +82,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -80, 1, 0)
 title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "ShinkaHub v3"
+title.Text = "ShinkaHub v2.5"
 title.TextColor3 = Color3.fromRGB(255, 215, 0)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
@@ -201,7 +208,7 @@ footer.BorderSizePixel = 0
 Instance.new("UICorner", footer).CornerRadius = UDim.new(0, 6)
 footer.Parent = mainFrame
 
--- Sistema de abas (função global)
+-- Sistema de abas (funções globais)
 _G.createTab = function(name)
     if not SH.tabButtonsFrame then
         SH.tabButtonsFrame = Instance.new("Frame")
@@ -269,7 +276,6 @@ _G.createTab = function(name)
     end)
 end
 
--- Funções auxiliares globais
 _G.notify = function(text, color)
     color = color or Color3.fromRGB(0,200,0)
     local notify = Instance.new("TextLabel")
@@ -358,9 +364,13 @@ _G.createToggleButton = function(tab, text, color, varName, onToggle)
     return btn
 end
 
--- Criar abas iniciais
+-- Criar abas
 createTab("Home")
 createTab("Local")
+createTab("Teleports")
+createTab("Visual")
+createTab("World")
+createTab("Scripts")
 
 -- Ativar primeira aba
 SH.currentTab = "Home"
@@ -382,11 +392,14 @@ createButton("Home", "Desativar Tudo", Color3.fromRGB(255, 50, 50), function()
             if k == "infJump" and SH.connections.infJump then SH.connections.infJump:Disconnect() SH.connections.infJump = nil end
             if k == "godMode" and SH.connections.godMode then SH.connections.godMode:Disconnect() SH.connections.godMode = nil end
             if k == "antiAFK" and SH.connections.antiAFK then SH.connections.antiAFK:Disconnect() SH.connections.antiAFK = nil end
+            if k == "aimbot" and SH.connections.aimbot then SH.connections.aimbot:Disconnect() SH.connections.aimbot = nil end
             if k == "esp" then
                 for _, player in pairs(Players:GetPlayers()) do
                     if player.Character then
                         local highlight = player.Character:FindFirstChildOfClass("Highlight")
                         if highlight and highlight.Name == "ShinkaESP" then highlight:Destroy() end
+                        local billboard = player.Character:FindFirstChildOfClass("BillboardGui")
+                        if billboard and billboard.Name == "DistanceGUI" then billboard:Destroy() end
                     end
                 end
                 if SH.connections.playerAdded then SH.connections.playerAdded:Disconnect() end
@@ -443,7 +456,9 @@ createToggleButton("Local", "God Mode", Color3.fromRGB(255, 0, 0), "godMode", fu
         SH.connections.godMode = RunService.Heartbeat:Connect(function()
             if LocalPlayer.Character then
                 local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if humanoid then humanoid.Health = humanoid.MaxHealth end
+                if humanoid and humanoid.Health > 0 then
+                    humanoid.Health = humanoid.MaxHealth
+                end
             end
         end)
     else
@@ -467,7 +482,8 @@ createToggleButton("Local", "Anti AFK", Color3.fromRGB(100, 100, 200), "antiAFK"
 end)
 
 print("Parte 1/4 carregada. Execute a parte 2 agora.")--[[
-    ShinkaHub v3.0 - PARTE 2/4 (CORRIGIDA)
+    ShinkaHub v2.5 - PARTE 2/4
+    Aba Teleports
     Execute após a parte 1.
 --]]
 
@@ -477,14 +493,7 @@ if not SH or not SH.gui then
     return
 end
 
--- Criar abas se não existirem
-if not SH.tabs["Teleports"] then createTab("Teleports") end
-if not SH.tabs["Visual"] then createTab("Visual") end
-
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
@@ -620,8 +629,27 @@ createButton("Teleports", "Teleport para Waypoint", Color3.fromRGB(255, 200, 0),
     closeList.MouseButton1Click:Connect(function() listFrame:Destroy() end)
 end)
 
+print("Parte 2/4 carregada. Execute a parte 3 agora.")--[[
+    ShinkaHub v2.5 - PARTE 3/4
+    Abas Visual e World
+    Execute após a parte 2.
+--]]
+
+local SH = _G.ShinkaHub
+if not SH or not SH.gui then
+    warn("Execute a parte 1 primeiro!")
+    return
+end
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
 -- ============================================
--- ABA VISUAL (parte 1)
+-- ABA VISUAL
 -- ============================================
 createToggleButton("Visual", "ESP", Color3.fromRGB(255, 255, 0), "esp", function(active)
     if active then
@@ -693,28 +721,6 @@ createToggleButton("Visual", "ESP", Color3.fromRGB(255, 255, 0), "esp", function
     end
 end)
 
-print("Parte 2/4 carregada. Execute a parte 3 agora.")--[[
-    ShinkaHub v3.0 - PARTE 3/4 (CORRIGIDA)
-    Execute após a parte 2.
---]]
-
-local SH = _G.ShinkaHub
-if not SH or not SH.gui then
-    warn("Execute a parte 1 primeiro!")
-    return
-end
-
--- Criar aba World se não existir
-if not SH.tabs["World"] then createTab("World") end
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
-
--- ============================================
--- ABA VISUAL (continuação)
--- ============================================
 createButton("Visual", "Configurar ESP", Color3.fromRGB(150, 150, 150), function()
     local configFrame = Instance.new("Frame")
     configFrame.Size = UDim2.new(0, 250, 0, 200)
@@ -862,10 +868,9 @@ createButton("Visual", "Configurar ESP", Color3.fromRGB(150, 150, 150), function
 end)
 
 createButton("Visual", "Remover Neblina", Color3.fromRGB(0, 150, 255), function()
-    local lighting = game:GetService("Lighting")
-    lighting.FogEnd = 1e9
-    lighting.FogStart = 1e9
-    lighting.Brightness = 2
+    Lighting.FogEnd = 1e9
+    Lighting.FogStart = 1e9
+    Lighting.Brightness = 2
     notify("Neblina removida", Color3.fromRGB(0,200,0))
 end)
 
@@ -926,9 +931,9 @@ createToggleButton("World", "Coletar Itens", Color3.fromRGB(0, 255, 100), "colle
             local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
             if not root then return end
             for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and obj.Name:lower():find("item") and not SH.collectItemsSettings.ignoreList[obj.Name] then
+                if obj:IsA("BasePart") and obj.Name:lower():find("item") and not SH.collectSettings.ignoreList[obj.Name] then
                     local dist = (obj.Position - root.Position).Magnitude
-                    if dist < SH.collectItemsSettings.range then
+                    if dist < SH.collectSettings.range then
                         root.CFrame = CFrame.new(obj.Position)
                         wait(0.1)
                         if obj:FindFirstChild("TouchInterest") then
@@ -947,11 +952,44 @@ end)
 
 createInputBox("World", "Alcance (ex: 50)", "Set Alcance", Color3.fromRGB(150,150,150), function(value)
     local r = tonumber(value)
-    if r then SH.collectItemsSettings.range = r end
+    if r then SH.collectSettings.range = r end
+end)
+
+createToggleButton("World", "Aimbot (Simples)", Color3.fromRGB(255, 0, 255), "aimbot", function(active)
+    if active then
+        SH.connections.aimbot = RunService.RenderStepped:Connect(function()
+            if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+            local closestPlayer = nil
+            local closestDistance = math.huge
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    if SH.aimbotSettings.teamCheck and player.Team == LocalPlayer.Team then continue end
+                    local part = player.Character:FindFirstChild(SH.aimbotSettings.hitPart) or player.Character.HumanoidRootPart
+                    local pos = part.Position
+                    local screenPos, onScreen = Workspace.CurrentCamera:WorldToViewportPoint(pos)
+                    if onScreen then
+                        local mousePos = Vector2.new(Mouse.X, Mouse.Y)
+                        local distance = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = player
+                        end
+                    end
+                end
+            end
+            if closestPlayer then
+                local targetPart = closestPlayer.Character:FindFirstChild(SH.aimbotSettings.hitPart) or closestPlayer.Character.HumanoidRootPart
+                Workspace.CurrentCamera.CFrame = CFrame.new(Workspace.CurrentCamera.CFrame.Position, targetPart.Position)
+            end
+        end)
+    else
+        if SH.connections.aimbot then SH.connections.aimbot:Disconnect() SH.connections.aimbot = nil end
+    end
 end)
 
 print("Parte 3/4 carregada. Execute a parte 4 agora.")--[[
-    ShinkaHub v3.0 - PARTE 4/4 (CORRIGIDA)
+    ShinkaHub v2.5 - PARTE 4/4
+    Aba Scripts e finalização
     Execute por último.
 --]]
 
@@ -960,9 +998,6 @@ if not SH or not SH.gui then
     warn("Execute a parte 1 primeiro!")
     return
 end
-
--- Criar aba Scripts se não existir
-if not SH.tabs["Scripts"] then createTab("Scripts") end
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -1047,4 +1082,4 @@ createButton("Scripts", "Limpar Memória", Color3.fromRGB(200, 0, 0), function()
     notify("Memória limpa", Color3.fromRGB(0,200,0))
 end)
 
-print("ShinkaHub v3.0 carregado completamente! Todas as 4 partes executadas.")
+print("ShinkaHub v2.5 carregado completamente! Todas as 4 partes executadas.")
